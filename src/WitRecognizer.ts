@@ -142,64 +142,21 @@ export class WitRecognizer {
                     // Wit.ai currently does not support multiple intents.
                     // The intent property is either undefined or an array with a single object.
                     // Also note that, unlike LUIS.ai, Wit.ai treats an intent like a regular entity
-                    let { intent, ...entities } = response.entities;
-                    const hasOtherEntities = Object.keys(entities).length > 0;
+                    let entities = response.entities;
+                    let entities_keys = Object.keys(entities);
+                    const hasOneIntent = entities_keys.length == 1;
 
                     // If there no useful response from Wit.ai, trigger the IntentDialog's default handler
-                    if (!intent && !hasOtherEntities) {
+                    if (!hasOneIntent) {
+                        return done(null, result);
+                    } else {
+                        const intent = entities[entities_keys[0]][0];
+                        // Update the default values for intent (null) and score (0.0)
+                        result.intent = intent["value"];
+                        result.score = intent["confidence"];
+                        result.intents = [{ intent: result.intent, score: result.score }];
                         return done(null, result);
                     }
-
-                    if (intent) {
-                        const { value, confidence } = intent[0];
-                        // Update the default values for intent (null) and score (0.0)
-                        result.intent = value;
-                        result.score = confidence;
-                        result.intents = [{ intent: value, score: confidence }];
-                    }
-
-                    if (hasOtherEntities) {
-                        // If Wit.ai did not discover any intent, but it did find other entities,
-                        // the result's score property must not be left to its default value of null.
-                        // Otherwise, the Bot Builder SDK will trigger the dialog's default handler
-                        // with a default result object => { score: 0.0, intent: null }.
-                        // Any other entities will not be included. The action below prevents this behavior.
-                        // Setting score to 0.1 lets the intent still be triggered but keeps it from
-                        // stomping on other models.
-                        if (!result.intent) {
-                            result.intent = 'none';
-                            result.score = 0.1;
-                        }
-
-                        result.entities = [];
-                        for (let key in entities) {
-                            for (let entity of entities[key]) {
-                                const { type, value, confidence } = entity;
-                                const foundEntity = <IEntity>{
-                                    type: key,
-                                    entity: null, // default value
-                                    rawEntity: <Object>entity,
-                                    score: confidence,
-                                };
-
-                                // In most cases the entity's in the response from Wit.ai will be of type "value".
-                                // There are other possible types, like "interval", in which case there will be a
-                                // "values" property instead. To deal with this variety of structures, there's a
-                                // "rawEntity" property to allow for custom entity processing in your own code.
-                                if (type === 'value') {
-                                    // Overwrite the default value null, with a value that must be a string.
-                                    foundEntity.entity = value;
-                                    // The startIndex and endIndex values will not always be useful.
-                                    // For example, a datetime entity of type "value" will get a universal timestamp
-                                    // as its value which cannot be found in the original message.
-                                    foundEntity.startIndex = response._text.indexOf(value);
-                                    foundEntity.endIndex = foundEntity.startIndex + (value.length - 1);
-                                }
-                                result.entities.push(foundEntity);
-                            }
-                        }
-                    }
-                    done(null, result);
                 })
                 .catch((err: Error) => {
                     done(err, null);
