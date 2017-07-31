@@ -1,30 +1,43 @@
-# botbuilder-wit 
+# botbuilder-wit-remade
 
-[![npm version](https://badge.fury.io/js/botbuilder-wit.svg)](https://badge.fury.io/js/botbuilder-wit)
-[![Build Status](https://travis-ci.org/sebsylvester/botbuilder-wit.svg?branch=master)](https://travis-ci.org/sebsylvester/botbuilder-wit)
-[![codecov](https://codecov.io/gh/sebsylvester/botbuilder-wit/branch/master/graph/badge.svg)](https://codecov.io/gh/sebsylvester/botbuilder-wit)
+A fork from [botbuilder-wit](https://github.com/sebsylvester/botbuilder-wit).
 
 Node.js module that provides [Wit.ai](https://wit.ai) NLP integration for the [Microsoft Bot Builder SDK](https://dev.botframework.com/), with built-in support for caching with Redis and Memcached.
 
 ## Installation
 
-`npm install --save botbuilder-wit`
+`npm install --save botbuilder-wit-remade`
 
-## General Usage
+## Bot setup
 ```
-// v2.x.x now uses a named export for the WitRecognizer class instead of module.exports
-const { WitRecognizer } = require('botbuilder-wit');
-const { IntentDialog } = require('botbuilder');
-const recognizer = new WitRecognizer('Wit.ai_access_token');
-const intents = new IntentDialog({recognizers: [recognizer]});
+const restify = require('restify');
+const builder = require('botbuilder');
+const { WitRecognizer } = require('botbuilder-wit-remade');
 
-intents.matches('intent.name', (session, args) => {...});
-intents.onDefault(session => {...});
+// Initialize the Restify server
+const server = restify.createServer();
 
-bot.dialog('/', intents);
+server.listen(process.env.port || process.env.PORT || 3978, () => {
+    console.log('%s listening to %s', server.name, server.url)
+});
 
-// Alternatively, you can add a global recognizer to the bot
-bot.recognizer(new WitRecognizer('Wit.ai_access_token'));
+// Initialize the ChatBot
+const connector = new builder.ChatConnector({
+    appId: 'YOUR_APP_ID',
+    appPassword: 'YOUR_APP_PASSWORD',
+});
+server.post('/api/messages', connector.listen());
+
+// Start the ChatBot
+let bot = new builder.UniversalBot(connector);
+
+// Start WIT.AI Recognizer
+let recognizer = new WitRecognizer('WIT.AI SECRET KEY');
+bot.recognizer(recognizer);
+```
+
+## General usage
+```
 bot.dialog('/doSomething', session => {...}).triggerAction({ 
     matches: 'intent.name'
 });
