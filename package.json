@@ -1,6 +1,6 @@
 {
   "name": "botbuilder-wit-remade",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Fork of botbuilder-wit with modifications for last version of Wit.ai. Provides Wit.ai NLP integration for the Microsoft Bot Builder SDK. Supports caching with Redis and Memcached.",
   "main": "lib/WitRecognizer",
   "types": "lib/WitRecognizer",
