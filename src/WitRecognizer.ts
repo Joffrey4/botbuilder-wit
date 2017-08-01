@@ -144,7 +144,7 @@ export class WitRecognizer {
                     // Also note that, unlike LUIS.ai, Wit.ai treats an intent like a regular entity
                     let entities = response.entities;
                     let entities_keys = Object.keys(entities);
-                    const hasOneIntent = entities_keys.length == 1;
+                    const hasOneIntent = entities_keys.length >= 1;
 
                     // If there no useful response from Wit.ai, trigger the IntentDialog's default handler
                     if (!hasOneIntent) {
@@ -152,7 +152,7 @@ export class WitRecognizer {
                     } else {
                         const intent = entities[entities_keys[0]][0];
                         // Update the default values for intent (null) and score (0.0)
-                        result.intent = intent["value"];
+                        result.intent = entities_keys[0] + "." + intent["value"];
                         result.score = intent["confidence"];
                         result.intents = [{ intent: result.intent, score: result.score }];
                         return done(null, result);
